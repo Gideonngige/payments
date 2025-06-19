@@ -15,6 +15,10 @@ mongoose.connect('mongodb+srv://ushindigideon01:%40mongodb2024@cluster0.lc4qeak.
 
 app.post("/api/stkpush", initiateSTKPush);
 
+
+app.get('/', (req, res) => {
+    res.send("Hello from server");
+})
 // Callback URL endpoint
 app.post("/callback", async (req, res) => {
   const callback = req.body.Body.stkCallback;
