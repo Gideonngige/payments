@@ -4,6 +4,8 @@ const mongoose = require("mongoose");
 const initiateSTKPush = require("./stkpush");
 const Payment = require('./models/payment.model');
 require("dotenv").config();
+const axios = require('axios');
+const cors = require('cors');
 
 const app = express();
 app.use(express.json());
@@ -66,6 +68,37 @@ app.get("/payments", async (req, res) => {
   const all = await Payment.find().sort({ createdAt: -1 });
   res.json(all);
 });
+
+
+// gemini api
+const API_KEY = process.env.API_KEY;
+app.use(cors());
+app.use(express.json());
+
+app.post('/chat', async (req, res) => {
+  const { message } = req.body;
+
+  try {
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+      {
+        contents: [{ parts: [{ text: message }] }]
+      },
+      {
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+
+    const reply = response.data.candidates[0].content.parts[0].text;
+    res.json({ reply });
+  } catch (err) {
+    console.error('Gemini API error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'Error from Gemini API', details: err.response?.data });
+  }
+});
+
+
+
 
 const PORT = 3000;
 app.listen(PORT, () => {
