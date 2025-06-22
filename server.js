@@ -6,8 +6,14 @@ const Payment = require('./models/payment.model');
 require("dotenv").config();
 const axios = require('axios');
 const cors = require('cors');
-
 const app = express();
+
+const bodyParser = require("body-parser");
+const initiateB2C = require("./b2c");
+const Payment2 = require("./models/payment.model2");
+app.use(bodyParser.json());
+
+
 app.use(express.json());
 
 
@@ -96,6 +102,37 @@ app.post('/chat', async (req, res) => {
     res.status(500).json({ error: 'Error from Gemini API', details: err.response?.data });
   }
 });
+
+
+// business to customer api
+app.post("/b2c/send", initiateB2C);
+
+app.post("/b2c/result", async (req, res) => {
+  const result = req.body.Result;
+  console.log("B2C Result:", result);
+
+  const params = {};
+  result.ResultParameters?.ResultParameter?.forEach(p => {
+    params[p.Key] = p.Value;
+  });
+
+  const payment = new Payment2({
+    phone: params.ReceiverPartyPublicName,
+    amount: params.TransactionAmount,
+    receipt: params.TransactionReceipt,
+    transactionDate: params.TransactionCompletedDateTime
+  });
+
+  await payment.save();
+  console.log("Payment saved:", payment);
+  res.status(200).send("B2C result received");
+});
+
+app.post("/b2c/timeout", (req, res) => {
+  console.log("B2C Timeout:", req.body);
+  res.status(200).send("Timeout handled");
+});
+
 
 
 
