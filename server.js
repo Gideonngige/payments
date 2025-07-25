@@ -11,6 +11,9 @@ const app = express();
 const bodyParser = require("body-parser");
 const initiateB2C = require("./b2c");
 const Payment2 = require("./models/payment.model2");
+
+const Chat = require('./models/chat');
+
 app.use(bodyParser.json());
 
 
@@ -82,7 +85,7 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/chat', async (req, res) => {
-  const { message } = req.body;
+  const { farmer_id, message } = req.body;
 
   try {
     const response = await axios.post(
@@ -96,12 +99,30 @@ app.post('/chat', async (req, res) => {
     );
 
     const reply = response.data.candidates[0].content.parts[0].text;
+
+    const chat = new Chat({ farmer_id, message, reply });
+    await chat.save();
+
+
     res.json({ reply });
   } catch (err) {
     console.error('Gemini API error:', err.response?.data || err.message);
     res.status(500).json({ error: 'Error from Gemini API', details: err.response?.data });
   }
 });
+
+app.get('/chats/:farmer_id', async (req, res) => {
+  const { farmer_id } = req.params;
+
+  try {
+    const chats = await Chat.find({ farmer_id }).sort({ createdAt: -1 });
+    res.json(chats);
+  } catch (err) {
+    console.error('Error fetching chats for farmer:', err);
+    res.status(500).json({ error: 'Failed to fetch chats for this farmer' });
+  }
+});
+
 
 
 // business to customer api
