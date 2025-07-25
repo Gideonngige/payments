@@ -115,7 +115,7 @@ app.get('/chats/:farmer_id', async (req, res) => {
   const { farmer_id } = req.params;
 
   try {
-    const chats = await Chat.find({ farmer_id }).sort({ createdAt: -1 });
+    const chats = await Chat.find({ farmer_id });
     res.json(chats);
   } catch (err) {
     console.error('Error fetching chats for farmer:', err);
